@@ -13,3 +13,10 @@ export const validUser: UserCredentials = {
   email: process.env.TEST_USER_EMAIL,
   password: process.env.TEST_USER_PASSWORD,
 };
+
+export const invalidUser: UserCredentials = {
+  email: 'nonexistent@example.com',
+  password: 'SomePassword123!',
+};
+
+export const wrongPassword = 'WrongPassword123!';

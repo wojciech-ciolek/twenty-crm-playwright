@@ -8,6 +8,7 @@ export class LoginPage {
   readonly submitButton: Locator;
   readonly errorMessage: Locator;
   readonly signUpButton: Locator;
+  readonly noAccessMessage: Locator;
 
   constructor(readonly page: Page) {
     this.emailInput = page.getByPlaceholder('Email');
@@ -16,6 +17,7 @@ export class LoginPage {
     this.submitButton = page.getByRole('button', { name: 'Sign in', exact: true });
     this.errorMessage = page.getByRole('status').first();
     this.signUpButton = page.getByRole('button', { name: 'Sign up', exact: true });
+    this.noAccessMessage = page.getByRole('status', { name: /User does not have access to/i });
   }
 
   async goto(): Promise<void> {
