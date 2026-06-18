@@ -1,4 +1,5 @@
 import { test, expect } from '@fixtures/index';
+import { PeopleListPage } from '@pages/people';
 
 test.use({ storageState: 'storage/auth.json' });
 
@@ -8,14 +9,13 @@ test.describe('People', () => {
         { tag: '@smoke' },
         async ({ page, personId }) => {
             // Arrange – person created by fixture via API
+            const peopleListPage = new PeopleListPage(page);
 
             // Act
-            await page.goto('/objects/people');
+            await peopleListPage.goto();
 
             // Assert
-            await expect(page.getByText('Test Portfolio')).toBeVisible();
-
-            console.log('Person ID from fixture:', personId);
+            await expect(peopleListPage.getRowByRecordId(personId)).toBeVisible({ timeout: 10_000 });
         },
     );
 });

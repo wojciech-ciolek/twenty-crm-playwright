@@ -31,12 +31,14 @@ export const test = base.extend<TwentyFixtures>({
 
     // setup – create via API
     const id = await createPerson(page, input);
+    console.log(`[fixture] Created person: ${id}`);
 
     // pass to test
     await use(id);
 
     // teardown – delete via API, always runs even if test fails
     await deletePerson(page, id);
+    console.log(`[fixture] Deleted person: ${id}`);
   },
 });
 
