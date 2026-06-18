@@ -11,12 +11,13 @@
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "codegen": "playwright codegen http://localhost:3000",
-    "report": "playwright show-report"
+    "report": "playwright show-report",
+    "dashboard": "ts-node reporters/generate-dashboard.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0",
     "@types/node": "^20.0.0",
-    "dotenv": "^17.4.2",
+    "dotenv": "^16.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.0"
   }

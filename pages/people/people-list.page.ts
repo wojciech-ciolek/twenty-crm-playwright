@@ -50,6 +50,8 @@ export class PeopleListPage {
     await this.activeCellEditor.getByRole('textbox').press('Enter');
   }
   async waitForLoad(): Promise<void> {
+    await this.page.waitForLoadState('domcontentloaded');
+    await this.page.mouse.wheel(0, 100);
     await this.page.getByTestId(/^row-id-/).first().waitFor({ state: 'visible', timeout: 15_000 });
   }
 }

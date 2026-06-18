@@ -5,3 +5,5 @@ test-results/
 .env
 *.env.local
 storage/auth.json
+flaky-report/flaky.json
+flaky-report/index.html
