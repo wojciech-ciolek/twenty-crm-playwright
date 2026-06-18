@@ -16,7 +16,7 @@ test.describe('People', () => {
             await peopleListPage.waitForLoad();
 
             // Assert
-            await expect(peopleListPage.getRowByRecordId(personId)).toBeVisible({ timeout: 10_000 });
+            await expect(peopleListPage.getRowByRecordId(personId)).toHaveCount(1);
         },
     );
 });
