@@ -20,9 +20,7 @@ export async function getAccessToken(page: Page): Promise<string> {
         throw new Error('tokenPair cookie not found – is the user logged in?');
     }
 
-    const decoded: TokenPair = JSON.parse(
-        decodeURIComponent(tokenPairCookie.value),
-    );
+    const decoded: TokenPair = JSON.parse(decodeURIComponent(tokenPairCookie.value));
 
     return decoded.accessOrWorkspaceAgnosticToken.token;
 }

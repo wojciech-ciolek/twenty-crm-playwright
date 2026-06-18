@@ -8,9 +8,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : 2,
-  reporter: process.env.CI
-      ? [['html'], ['list'], ['./reporters/flaky.reporter.ts']]
-      : [['html'], ['list']],
+  reporter: process.env.CI ? [['html'], ['list'], ['./reporters/flaky.reporter.ts']] : [['html'], ['list']],
   globalSetup: './setup/global-setup.ts',
   use: {
     baseURL: process.env.BASE_URL ?? 'http://localhost:3000',

@@ -12,13 +12,23 @@
     "test:debug": "playwright test --debug",
     "codegen": "playwright codegen http://localhost:3000",
     "report": "playwright show-report",
-    "dashboard": "ts-node reporters/generate-dashboard.ts"
+    "dashboard": "ts-node reporters/generate-dashboard.ts",
+    "lint": "eslint \"**/*.ts\"",
+    "lint:fix": "eslint \"**/*.ts\" --fix",
+    "format": "prettier --write \"**/*.ts\"",
+    "format:check": "prettier --check \"**/*.ts\""
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.44.0",
     "@types/node": "^20.0.0",
     "dotenv": "^17.0.0",
+    "eslint": "^10.5.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.6.0",
+    "prettier": "^3.8.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "typescript-eslint": "^8.61.1"
   }
 }

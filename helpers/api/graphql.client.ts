@@ -28,17 +28,13 @@ export async function graphqlRequest(
     });
 
     if (!response.ok()) {
-        throw new Error(
-            `GraphQL request failed: ${response.status()} ${response.statusText()}`,
-        );
+        throw new Error(`GraphQL request failed: ${response.status()} ${response.statusText()}`);
     }
 
     const body = await response.json();
 
     if (body.errors) {
-        throw new Error(
-            `GraphQL errors: ${JSON.stringify(body.errors, null, 2)}`,
-        );
+        throw new Error(`GraphQL errors: ${JSON.stringify(body.errors, null, 2)}`);
     }
 
     return body.data;

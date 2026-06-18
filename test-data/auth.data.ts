@@ -1,7 +1,5 @@
 if (!process.env.TEST_USER_EMAIL || !process.env.TEST_USER_PASSWORD) {
-  throw new Error(
-      'TEST_USER_EMAIL and TEST_USER_PASSWORD must be set in .env – see .env.example',
-  );
+  throw new Error('TEST_USER_EMAIL and TEST_USER_PASSWORD must be set in .env – see .env.example');
 }
 
 export interface UserCredentials {

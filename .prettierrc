@@ -1,0 +1,15 @@
+{
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "tabWidth": 2,
+  "printWidth": 120,
+  "overrides": [
+    {
+      "files": ["tests/**/*.ts", "helpers/**/*.ts", "reporters/**/*.ts", "setup/**/*.ts"],
+      "options": {
+        "tabWidth": 4
+      }
+    }
+  ]
+}

@@ -56,14 +56,16 @@ function formatDate(iso: string): string {
 }
 
 const totalOccurrences = entries.reduce((sum, e) => sum + e.occurrences, 0);
-const criticalCount = entries.filter(e => e.occurrences >= 10).length;
-const highCount = entries.filter(e => e.occurrences >= 5 && e.occurrences < 10).length;
+const criticalCount = entries.filter((e) => e.occurrences >= 10).length;
+const highCount = entries.filter((e) => e.occurrences >= 5 && e.occurrences < 10).length;
 
 const rows = entries
     .map((e, i) => {
         const sevClass = severityClass(e.occurrences);
         const runLinks = e.runUrls
-            .map((url, j) => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="run-link">#${j + 1}</a>`)
+            .map(
+                (url, j) => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="run-link">#${j + 1}</a>`,
+            )
             .join('');
 
         return `<tr class="row"
@@ -189,9 +191,10 @@ const html = `<!DOCTYPE html>
     </select>
   </div>
   <div class="table-wrap">
-    ${entries.length === 0
-    ? `<div class="empty">No flaky tests recorded yet.</div>`
-    : `<table>
+    ${
+        entries.length === 0
+            ? `<div class="empty">No flaky tests recorded yet.</div>`
+            : `<table>
       <thead>
         <tr>
           <th style="width:40px;">#</th>
@@ -210,7 +213,8 @@ const html = `<!DOCTYPE html>
         </tr>
       </thead>
       <tbody id="tbody">${rows}</tbody>
-    </table>`}
+    </table>`
+    }
   </div>
 </div>
 <script>

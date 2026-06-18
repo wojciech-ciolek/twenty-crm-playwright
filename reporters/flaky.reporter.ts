@@ -70,7 +70,7 @@ class FlakyReporter implements Reporter {
     }
 
     onEnd(): void {
-        const flakyKeys = [...this.passedAfterRetry].filter(k => this.failedTests.has(k));
+        const flakyKeys = [...this.passedAfterRetry].filter((k) => this.failedTests.has(k));
 
         if (flakyKeys.length === 0) {
             console.log('[FlakyReporter] No flaky tests detected in this run.');
@@ -83,7 +83,7 @@ class FlakyReporter implements Reporter {
         for (const key of flakyKeys) {
             const meta = this.testMeta.get(key)!;
             const existing = db.entries.find(
-                e => e.title === meta.title && e.file === meta.file && e.project === meta.project,
+                (e) => e.title === meta.title && e.file === meta.file && e.project === meta.project,
             );
 
             if (existing) {

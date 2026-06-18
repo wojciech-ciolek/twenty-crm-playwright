@@ -30,10 +30,7 @@ const DELETE_PERSON = `
  * Creates a person via GraphQL API.
  * Returns the created person's ID for use in test cleanup.
  */
-export async function createPerson(
-    page: Page,
-    input: PersonInput,
-): Promise<string> {
+export async function createPerson(page: Page, input: PersonInput): Promise<string> {
     const data = await graphqlRequest(page, 'CreatePerson', CREATE_PERSON, {
         input: {
             name: {
