@@ -49,6 +49,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT || github.token }}
 
       - uses: actions/setup-node@v4
         with:
@@ -77,11 +80,53 @@ jobs:
           exit 1
 
       - name: Run smoke tests
+        id: run_tests
+        continue-on-error: true
         run: npx playwright test --grep @smoke --config playwright.config.ci.ts
         env:
           BASE_URL: http://localhost:3000
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+          PLAYWRIGHT_REPORT_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          FLAKY_DB_PATH: ${{ github.event_name == 'schedule' && 'flaky-report/flaky.json' || '' }}
+
+      - name: Checkout flaky-history branch
+        if: always() && github.event_name == 'schedule'
+        run: |
+          git fetch origin flaky-history
+          git checkout -B flaky-history origin/flaky-history || git checkout -b flaky-history
+
+      - name: Restore flaky database
+        if: always() && github.event_name == 'schedule'
+        run: |
+          if [ ! -f flaky-report/flaky.json ]; then
+            mkdir -p flaky-report
+            echo '{"updated":"","entries":[]}' > flaky-report/flaky.json
+          fi
+
+      - name: Generate flaky dashboard
+        if: always() && github.event_name == 'schedule'
+        run: npx ts-node reporters/generate-dashboard.ts flaky-report/flaky.json flaky-report/index.html
+
+      - name: Commit flaky database
+        if: always() && github.event_name == 'schedule'
+        continue-on-error: true
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add flaky-report/flaky.json flaky-report/index.html
+          git diff --cached --quiet || git commit -m "ci: update flaky test history [smoke]"
+          git push origin flaky-history
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+      - name: Upload flaky dashboard
+        if: always() && github.event_name == 'schedule'
+        uses: actions/upload-artifact@v4
+        with:
+          name: flaky-dashboard
+          path: twenty-crm-tests/flaky-report/
+          retention-days: 90
 
       - name: Upload test report
         uses: actions/upload-artifact@v4
@@ -90,6 +135,10 @@ jobs:
           name: smoke-report
           path: twenty-crm-tests/playwright-report/
           retention-days: 7
+
+      - name: Fail job if tests failed
+        if: steps.run_tests.outcome == 'failure'
+        run: exit 1
 
   regression:
     name: Full Regression
@@ -122,6 +171,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT || github.token }}
 
       - uses: actions/setup-node@v4
         with:
@@ -150,11 +202,53 @@ jobs:
           exit 1
 
       - name: Run full regression suite
+        id: run_tests
+        continue-on-error: true
         run: npx playwright test --grep @regression --config playwright.config.ci.ts
         env:
           BASE_URL: http://localhost:3000
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+          PLAYWRIGHT_REPORT_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          FLAKY_DB_PATH: ${{ github.event_name == 'schedule' && 'flaky-report/flaky.json' || '' }}
+
+      - name: Checkout flaky-history branch
+        if: always() && github.event_name == 'schedule'
+        run: |
+          git fetch origin flaky-history
+          git checkout -B flaky-history origin/flaky-history || git checkout -b flaky-history
+
+      - name: Restore flaky database
+        if: always() && github.event_name == 'schedule'
+        run: |
+          if [ ! -f flaky-report/flaky.json ]; then
+            mkdir -p flaky-report
+            echo '{"updated":"","entries":[]}' > flaky-report/flaky.json
+          fi
+
+      - name: Generate flaky dashboard
+        if: always() && github.event_name == 'schedule'
+        run: npx ts-node reporters/generate-dashboard.ts flaky-report/flaky.json flaky-report/index.html
+
+      - name: Commit flaky database
+        if: always() && github.event_name == 'schedule'
+        continue-on-error: true
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add flaky-report/flaky.json flaky-report/index.html
+          git diff --cached --quiet || git commit -m "ci: update flaky test history [regression]"
+          git push origin flaky-history
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+      - name: Upload flaky dashboard
+        if: always() && github.event_name == 'schedule'
+        uses: actions/upload-artifact@v4
+        with:
+          name: flaky-dashboard-regression
+          path: twenty-crm-tests/flaky-report/
+          retention-days: 90
 
       - name: Upload test report
         uses: actions/upload-artifact@v4
@@ -163,3 +257,7 @@ jobs:
           name: regression-report
           path: twenty-crm-tests/playwright-report/
           retention-days: 14
+
+      - name: Fail job if tests failed
+        if: steps.run_tests.outcome == 'failure'
+        run: exit 1
