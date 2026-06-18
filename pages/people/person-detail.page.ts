@@ -4,11 +4,15 @@ export class PersonDetailPage {
   readonly fieldsContainer: Locator;
   readonly activeInlineEditor: Locator;
   readonly dropdownListbox: Locator;
+  readonly nameHeader: Locator;
 
   constructor(readonly page: Page) {
     this.fieldsContainer = page.getByTestId('record-fields-widget');
     this.activeInlineEditor = page.getByTestId('inline-cell-edit-mode-container');
     this.dropdownListbox = page.getByRole('listbox');
+    // The page header title cell renders the person's full name and, when
+    // clicked, swaps in the first/last name inline editor in place.
+    this.nameHeader = page.getByTestId('top-bar-title');
   }
 
   async goto(recordId: string): Promise<void> {
@@ -51,6 +55,21 @@ export class PersonDetailPage {
     await this.openFieldEditor(label);
     await this.fillActiveInlineInput(value);
     await this.confirmActiveInlineInput();
+  }
+
+  getNameHeaderInputs(): Locator {
+    return this.nameHeader.getByRole('textbox');
+  }
+
+  async openNameEditor(): Promise<void> {
+    await this.nameHeader.click();
+  }
+
+  async editFirstName(value: string): Promise<void> {
+    await this.openNameEditor();
+    const firstNameInput = this.getNameHeaderInputs().first();
+    await firstNameInput.fill(value);
+    await firstNameInput.press('Enter');
   }
 
   async selectDropdownOption(label: string, optionText: string): Promise<void> {

@@ -13,6 +13,7 @@ test.describe('People', () => {
 
             // Act
             await peopleListPage.goto();
+            await peopleListPage.waitForLoad();
 
             // Assert
             await expect(peopleListPage.getRowByRecordId(personId)).toBeVisible({ timeout: 10_000 });

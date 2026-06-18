@@ -49,4 +49,7 @@ export class PeopleListPage {
   async confirmActiveCellEditor(): Promise<void> {
     await this.activeCellEditor.getByRole('textbox').press('Enter');
   }
+  async waitForLoad(): Promise<void> {
+    await this.page.getByTestId(/^row-id-/).first().waitFor({ state: 'visible', timeout: 15_000 });
+  }
 }

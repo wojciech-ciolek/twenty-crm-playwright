@@ -1,7 +1,8 @@
 import { test as base, Page } from '@playwright/test';
 import { LoginPage } from '@pages/auth';
 import { validUser } from '@test-data/auth.data';
-import { createPerson, deletePerson, PersonInput } from '@helpers/api/people.api';
+import { createPerson, deletePerson } from '@helpers/api/people.api';
+import { testPerson } from '@test-data/people.data';
 
 interface TwentyFixtures {
   authenticatedPage: Page;
@@ -24,19 +25,11 @@ export const test = base.extend<TwentyFixtures>({
   },
 
   personId: async ({ page }, use) => {
-    const input: PersonInput = {
-      firstName: 'Test',
-      lastName: 'Portfolio',
-    };
-
-    // setup – create via API
-    const id = await createPerson(page, input);
+    const id = await createPerson(page, testPerson);
     console.log(`[fixture] Created person: ${id}`);
 
-    // pass to test
     await use(id);
 
-    // teardown – delete via API, always runs even if test fails
     await deletePerson(page, id);
     console.log(`[fixture] Deleted person: ${id}`);
   },
