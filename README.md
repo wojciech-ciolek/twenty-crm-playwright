@@ -29,6 +29,8 @@ npm run test:smoke      # critical path, ~60s
 npm test                # full suite
 npm run test:headed     # watch the browser
 npm run dashboard       # generate flaky test HTML dashboard
+npm run allure:generate # generate Allure report from allure-results/
+npm run allure:open     # open the generated Allure report
 ```
 
 ## Architecture decisions
@@ -47,6 +49,8 @@ npm run dashboard       # generate flaky test HTML dashboard
 
 **FlakyReporter.** `reporters/flaky.reporter.ts` is a custom Playwright reporter that detects flaky tests — tests that fail at least once but eventually pass within the same run (i.e. passed only after a retry). Results are persisted to `flaky-report/flaky.json` between runs so that flakiness history accumulates over time. Run `npm run dashboard` to generate an HTML dashboard with severity classification, filtering, and sortable columns.
 
+**Allure reporting.** `allure-playwright` is registered alongside the built-in `html` and `list` reporters in both `playwright.config.ts` and `playwright.config.ci.ts`, writing raw results to `allure-results/`. Run `npm run allure:generate` to build the static HTML report into `allure-report/`, then `npm run allure:open` to serve and view it (or `npm run allure:clean` to clear both directories between runs).
+
 ## Project structure
 
 ```
@@ -57,6 +61,8 @@ twenty-crm-tests/
   helpers/api/    # GraphQL client + per-entity API helpers for test data setup/teardown
   reporters/       # FlakyReporter + dashboard generator
   flaky-report/    # persisted flaky.json + generated index.html (gitignored)
+  allure-results/  # raw Allure results written by allure-playwright (gitignored)
+  allure-report/   # generated Allure HTML report (gitignored)
   config/         # URLs and env config (urls.ts)
   test-data/      # typed interfaces + constants, one file per domain
   setup/          # global-setup.ts — runs once before all tests, saves storage/auth.json

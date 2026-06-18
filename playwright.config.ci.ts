@@ -8,7 +8,7 @@ export default defineConfig({
   forbidOnly: true,
   retries: 2,
   workers: 1,
-  reporter: [['html'], ['list'], ['./reporters/flaky.reporter.ts']],
+  reporter: [['html'], ['list'], ['./reporters/flaky.reporter.ts'], ['allure-playwright']],
   globalSetup: './setup/global-setup.ts',
   use: {
     baseURL: process.env.BASE_URL ?? 'http://localhost:3000',
