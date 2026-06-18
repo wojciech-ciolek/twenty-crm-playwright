@@ -51,7 +51,6 @@ export class PeopleListPage {
   }
   async waitForLoad(): Promise<void> {
     await this.page.waitForLoadState('domcontentloaded');
-    await this.page.mouse.wheel(0, 100);
-    await this.page.getByTestId(/^row-id-/).first().waitFor({ state: 'visible', timeout: 15_000 });
+    await this.page.waitForSelector('[data-testid^="row-id-"]', { timeout: 15_000 });
   }
 }

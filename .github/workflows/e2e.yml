@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    # Nightly regression run at 02:00 UTC
     - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
@@ -19,6 +18,10 @@ on:
           - smoke
           - regression
           - both
+
+defaults:
+  run:
+    working-directory: twenty-crm-tests
 
 jobs:
   smoke:
@@ -51,6 +54,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: twenty-crm-tests/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -58,8 +62,22 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
 
+      - name: Wait for Twenty CRM to be ready
+        run: |
+          echo "Waiting for Twenty CRM to finish initializing..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null; then
+              echo "Twenty CRM is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30 – waiting 5s..."
+            sleep 5
+          done
+          echo "Twenty CRM did not become ready in time"
+          exit 1
+
       - name: Run smoke tests
-        run: npx playwright test --grep @smoke
+        run: npx playwright test --grep @smoke --config playwright.config.ci.ts
         env:
           BASE_URL: http://localhost:3000
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
@@ -70,16 +88,18 @@ jobs:
         if: always()
         with:
           name: smoke-report
-          path: playwright-report/
+          path: twenty-crm-tests/playwright-report/
           retention-days: 7
 
   regression:
     name: Full Regression
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: smoke
+    needs: [smoke]
     if: >
-      always() && (
+      always() &&
+      (needs.smoke.result == 'success' || needs.smoke.result == 'skipped') &&
+      (
         github.event_name == 'push' ||
         github.event_name == 'schedule' ||
         inputs.job == 'regression' ||
@@ -107,6 +127,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: twenty-crm-tests/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -114,8 +135,22 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
 
+      - name: Wait for Twenty CRM to be ready
+        run: |
+          echo "Waiting for Twenty CRM to finish initializing..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null; then
+              echo "Twenty CRM is ready"
+              exit 0
+            fi
+            echo "Attempt $i/30 – waiting 5s..."
+            sleep 5
+          done
+          echo "Twenty CRM did not become ready in time"
+          exit 1
+
       - name: Run full regression suite
-        run: npx playwright test --grep @regression
+        run: npx playwright test --grep @regression --config playwright.config.ci.ts
         env:
           BASE_URL: http://localhost:3000
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
@@ -126,5 +161,5 @@ jobs:
         if: always()
         with:
           name: regression-report
-          path: playwright-report/
+          path: twenty-crm-tests/playwright-report/
           retention-days: 14
