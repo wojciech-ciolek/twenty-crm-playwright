@@ -8,12 +8,27 @@ on:
   schedule:
     # Nightly regression run at 02:00 UTC
     - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Which job to run'
+        required: true
+        default: 'smoke'
+        type: choice
+        options:
+          - smoke
+          - regression
+          - both
 
 jobs:
   smoke:
     name: Smoke Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    if: >
+      github.event_name != 'workflow_dispatch' ||
+      inputs.job == 'smoke' ||
+      inputs.job == 'both'
 
     services:
       twenty:
@@ -62,9 +77,14 @@ jobs:
     name: Full Regression
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Only on main push or nightly – not on every PR
-    if: github.event_name == 'push' || github.event_name == 'schedule'
     needs: smoke
+    if: >
+      always() && (
+        github.event_name == 'push' ||
+        github.event_name == 'schedule' ||
+        inputs.job == 'regression' ||
+        inputs.job == 'both'
+      )
 
     services:
       twenty:

@@ -62,15 +62,30 @@ twenty-crm-tests/
 
 ## CI/CD
 
-GitHub Actions runs two jobs against a Twenty CRM service container (`.github/workflows/e2e.yml`):
+The pipeline is designed around a **smoke gate** — fast, critical-path tests block every push before the slower regression suite runs. This keeps PR feedback under 2 minutes while still running thorough coverage on every merge.
 
-| Trigger | Job | Tests |
-|---|---|---|
-| Every push / PR to main | `smoke` | `@smoke` only |
-| Push to main | `smoke` → `regression` | all tests |
-| Nightly (02:00 UTC) | `smoke` → `regression` | all tests |
+`.github/workflows/e2e.yml` runs two jobs against a Twenty CRM service container (no external environment provisioning needed):
 
-`regression` only runs after `smoke` passes, so a broken critical path fails fast without burning a full regression run. Reports are uploaded as artifacts (7 days for smoke, 14 for regression).
+| Trigger | Job | Tests | Artifacts retained |
+|---|---|---|---|
+| Every push / PR to main | `smoke` | `@smoke` only | 7 days |
+| Push to main | `smoke` → `regression` | all tests | 14 days |
+| Nightly (02:00 UTC) | `smoke` → `regression` | all tests | 14 days |
+| Manual (`workflow_dispatch`) | `smoke`, `regression`, or `both` | selected | per job |
+
+> **Note:** `regression` declares `needs: smoke` — it only starts after smoke passes. When triggered via `workflow_dispatch` with `job: regression`, smoke is skipped and regression runs directly.
+
+**Key decisions:**
+
+- **Service container over external environment** – Twenty CRM runs as a Docker service container inside the GitHub Actions job. No external staging environment, no secrets beyond test credentials, no flakiness from shared state between runs.
+
+- **`needs: smoke` on regression** – regression only starts after smoke passes. A broken critical path fails fast without burning the full suite run time or cluttering the artifact history with a useless regression report.
+
+- **Nightly run** – catches regressions introduced by dependency updates, Docker image changes, or time-dependent bugs that wouldn't surface on a push-triggered run.
+
+- **`workflow_dispatch` with job selector** – allows manually triggering smoke, regression, or both. Useful for validating a fix without waiting for a scheduled run or pushing a dummy commit.
+
+- **Reports as artifacts** – HTML reports are uploaded after every run (`if: always()`), so failures are debuggable even when the job itself is gone. Smoke reports expire after 7 days; regression after 14.
 
 ## Test coverage
 
