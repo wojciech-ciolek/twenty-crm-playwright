@@ -13,7 +13,6 @@
     "baseUrl": ".",
     "paths": {
       "@pages/*": ["pages/*"],
-      "@flows/*": ["flows/*"],
       "@fixtures/*": ["fixtures/*"],
       "@helpers/*": ["helpers/*"],
       "@config/*": ["config/*"],

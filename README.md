@@ -1,141 +1,82 @@
 # Twenty CRM – E2E Test Portfolio
 
-Playwright + TypeScript test suite for [Twenty CRM](https://github.com/twentyhq/twenty) – an open-source CRM with 20k+ GitHub stars.
+Playwright + TypeScript end-to-end test suite for [Twenty CRM](https://github.com/twentyhq/twenty), built to demonstrate production-grade QA automation: Page Objects, GraphQL-based test data management, and a staged CI pipeline.
 
-**Why Twenty CRM?** It uses a modern stack (React, GraphQL, NestJS), ships with `data-testid` attributes on most UI elements, and can be spun up locally in minutes via Docker. That makes it an ideal target for demonstrating realistic QA automation patterns without NDA concerns.
+## Why Twenty CRM
 
----
+Twenty is open source, built on a modern stack (React, GraphQL, NestJS), ships with `data-testid` attributes on most UI elements, and runs locally via Docker in minutes. That makes it a realistic target for demonstrating automation patterns against a production-shaped app — without any NDA constraints tied to a real employer's codebase.
 
 ## Quick start
 
 ```bash
-# 1. Clone and install
-git clone https://github.com/your-username/twenty-crm-playwright.git
-cd twenty-crm-playwright
-npm install
-npx playwright install chromium
-
-# 2. Start Twenty CRM locally
+# 1. Run Twenty CRM locally
 git clone https://github.com/twentyhq/twenty.git
 cd twenty/packages/twenty-docker && cp .env.example .env
 docker compose up -d
-# app available at http://localhost:3000
+# Twenty is now running at http://localhost:3000 — sign up a test user there
 
-# 3. Configure credentials
+# 2. Install this suite
+cd twenty-crm-tests
+npm install
+npx playwright install chromium
+
+# 3. Configure test credentials
 cp .env.example .env
-# edit .env with your test user's credentials
+# fill in BASE_URL, TEST_USER_EMAIL, TEST_USER_PASSWORD
 
 # 4. Run tests
-npm run test:smoke      # fast critical-path tests (~60 s)
-npm run test            # full suite
+npm run test:smoke      # critical path, ~60s
+npm test                # full suite
 npm run test:headed     # watch the browser
 ```
 
----
+## Architecture decisions
+
+**Page Objects.** Each bounded screen (login, people list, person detail) is a single class exposing locators and atomic actions only — no assertions. This keeps every selector change confined to one file and keeps spec files readable as a sequence of user-facing steps.
+
+**Fixtures over beforeEach/afterEach.** Setup and teardown live in `fixtures/index.ts` as Playwright fixtures rather than test hooks. Teardown after `await use()` runs even if the test fails, which a plain `afterEach` can't guarantee, and a test that doesn't request a fixture never pays its setup cost.
+
+**GraphQL API helpers for test data.** `helpers/api/` wraps GraphQL mutations (`createPerson` / `deletePerson`) authenticated with the JWT pulled from the session cookie. Fixtures call these directly to set up and tear down records, which is faster and more reliable than driving the same operations through the UI.
+
+**Session reuse via storageState.** `setup/global-setup.ts` logs in once before the suite runs and saves the session to `storage/auth.json`. Tests opt in with `test.use({ storageState: 'storage/auth.json' })`, so most tests start already authenticated instead of repeating a UI login.
+
+**Typed test data.** All test data lives in `test-data/` as typed interfaces with named constants (e.g. `validUser` in `auth.data.ts`). Renaming or removing a field surfaces as a compile error everywhere it's used, not a silent runtime failure.
+
+**Tagging strategy.** Every test carries `{ tag: '@smoke' }` or `{ tag: '@regression' }`. This lets CI get fast feedback on every push without skipping thorough coverage — it just runs on a different cadence.
 
 ## Project structure
 
 ```
-tests/          ← test files (.spec.ts) – thin, readable, assert-focused
-pages/          ← Page Objects and Step Objects
-flows/          ← reusable async sequences (login, create record…)
-fixtures/       ← custom Playwright fixtures (extend base `test`)
-helpers/        ← low-level UI and API utilities
-config/         ← URLs and environment config
-test-data/      ← typed test data (interfaces + constants)
-.github/        ← CI/CD workflow (smoke on every push, regression nightly)
+twenty-crm-tests/
+  tests/          # spec files — thin, assertion-focused, grouped by domain (auth/, people/)
+  pages/          # Page Objects, one per bounded screen (auth/, people/)
+  fixtures/       # custom Playwright fixtures extending base test (index.ts)
+  helpers/api/    # GraphQL client + per-entity API helpers for test data setup/teardown
+  config/         # URLs and env config (urls.ts)
+  test-data/      # typed interfaces + constants, one file per domain
+  setup/          # global-setup.ts — runs once before all tests, saves storage/auth.json
+  storage/        # auth.json — saved session state, gitignored
+  playwright.config.ts
+  .github/workflows/e2e.yml
 ```
-
----
-
-## Architectural decisions
-
-### 1. Page Object vs Step Object – knowing when to use each
-
-**Page Object** is the right abstraction for a *single, bounded screen* where all elements are visible simultaneously and user interaction is non-sequential. `LoginPage` is a textbook example: two inputs, one button, one error state.
-
-**Step Object** fits a *multi-step wizard or modal* where each stage reveals new fields and has its own validation. `CreateContactSteps` maps to Twenty's contact creation modal: the first step captures the name, subsequent steps optionally add email, phone, and company. Collapsing all of that into one Page Object would expose 10+ methods that are only valid at specific stages, making the API misleading.
-
-The decision rule: if the UI has distinct stages with their own "next" action, use Steps. If it's a single view, use a Page Object.
-
-### 2. Fixtures instead of beforeEach/afterEach
-
-Playwright fixtures are the idiomatic replacement for `beforeEach`/`afterEach` pairs. Three concrete reasons this project uses them:
-
-**Guaranteed cleanup.** Fixture teardown (the code after `await use()`) runs even when a test throws, unlike `afterEach` which can be skipped by certain failure modes.
-
-**Composability.** The `authenticatedPage` fixture builds on top of `page` transparently. Adding a new `pageWithSeededContact` fixture is a one-liner that depends on `authenticatedPage` – no new hooks needed.
-
-**Laziness.** A test that doesn't declare `authenticatedPage` in its parameters never pays the login cost. With `beforeEach`, every test in the block runs setup regardless.
-
-### 3. Flow pattern for reusable multi-page sequences
-
-A Flow is a plain async function that accepts a `Page` and performs a user journey spanning multiple pages or UI states. `loginFlow` is the simplest example.
-
-Flows exist between Page Objects (which own a single page's locators) and tests (which own assertions). They are the right home for setup sequences that would otherwise be copy-pasted between tests.
-
-A Flow can be called from a fixture (most common), from another Flow, or directly in a test when fine-grained control is needed.
-
-### 4. Inline cleanup instead of afterEach
-
-Tests that create records clean them up in the same test body. This is intentional:
-
-- The full record lifecycle (create → assert → delete → assert) is visible in one place.
-- There's no shared mutable state between a test body and a hook.
-- If creation fails, the cleanup path is never reached – which is correct, because there's nothing to clean up.
-
-### 5. Typed test data
-
-All test data lives in `test-data/` as typed TypeScript interfaces with named constants. Benefits:
-
-- TypeScript catches mismatches between test data shape and Page Object method signatures at compile time.
-- Renaming a field causes a compile error everywhere it's used, not a silent test failure.
-- `invalidCredentials` is an array of `UserCredentials` objects, enabling data-driven parametric tests without a third-party library.
-
-### 6. Tagging strategy
-
-Every test carries one of:
-
-- `@smoke` – critical-path tests that must pass on every push (≤ 2 minutes total)
-- `@regression` – thorough coverage run on PR merge and nightly
-
-CI runs smoke first; regression only runs if smoke is green. This keeps the PR feedback loop under 3 minutes while still catching edge cases overnight.
-
----
 
 ## CI/CD
 
-GitHub Actions workflow at `.github/workflows/e2e.yml`:
+GitHub Actions runs two jobs against a Twenty CRM service container (`.github/workflows/e2e.yml`):
 
-| Event | Job | Tests |
+| Trigger | Job | Tests |
 |---|---|---|
-| Every push | `smoke` | `@smoke` only |
-| PR to main | `smoke` | `@smoke` only |
-| Push to main | `smoke` → `regression` | All tests |
-| Nightly (02:00 UTC) | `smoke` → `regression` | All tests |
+| Every push / PR to main | `smoke` | `@smoke` only |
+| Push to main | `smoke` → `regression` | all tests |
+| Nightly (02:00 UTC) | `smoke` → `regression` | all tests |
 
-Test reports are uploaded as artifacts and retained for 7 days (smoke) or 14 days (regression).
+`regression` only runs after `smoke` passes, so a broken critical path fails fast without burning a full regression run. Reports are uploaded as artifacts (7 days for smoke, 14 for regression).
 
----
+## Test coverage
 
-## Planned test coverage
-
-| Area | Status |
-|---|---|
-| Auth – login (valid credentials) | ✅ |
-| Auth – login (invalid credentials, parametric) | ✅ |
-| Auth – logout + protected route redirect | ✅ |
-| Contacts – create | ✅ |
-| Contacts – edit | ✅ |
-| Contacts – delete | ✅ |
-| Companies – create / edit / delete | 🔜 |
-| Pipeline – create deal, change status | 🔜 |
-| API helpers for test data setup | 🔜 |
-
----
-
-## Running in CI without Docker
-
-The workflow uses GitHub Actions service containers to spin up Twenty CRM automatically. No manual setup required – a fresh clone and `gh workflow run e2e.yml` is enough.
-
-For local runs, Twenty must be running at `http://localhost:3000` (see Quick start above).
+| Area | Scenario | Tag |
+|---|---|---|
+| Auth | Log in with valid credentials | `@smoke` |
+| Auth | Invalid password shows an error | `@regression` |
+| Auth | Sign-up attempt with a non-existent email is blocked | `@regression` |
+| People | A person created via the API appears in the list | `@smoke` |
