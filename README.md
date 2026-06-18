@@ -1,6 +1,6 @@
 # Twenty CRM – E2E Test Portfolio
 
-Playwright + TypeScript end-to-end test suite for [Twenty CRM](https://github.com/twentyhq/twenty), built to demonstrate production-grade QA automation: Page Objects, GraphQL-based test data management, and a staged CI pipeline.
+Playwright + TypeScript end-to-end test suite for [Twenty CRM](https://github.com/twentyhq/twenty), built to demonstrate production-grade QA automation: Page Objects, GraphQL-based test data management, a custom flaky test tracker, and a staged CI pipeline.
 
 ## Why Twenty CRM
 
@@ -28,6 +28,7 @@ cp .env.example .env
 npm run test:smoke      # critical path, ~60s
 npm test                # full suite
 npm run test:headed     # watch the browser
+npm run dashboard       # generate flaky test HTML dashboard
 ```
 
 ## Architecture decisions
@@ -36,13 +37,15 @@ npm run test:headed     # watch the browser
 
 **Fixtures over beforeEach/afterEach.** Setup and teardown live in `fixtures/index.ts` as Playwright fixtures rather than test hooks. Teardown after `await use()` runs even if the test fails, which a plain `afterEach` can't guarantee, and a test that doesn't request a fixture never pays its setup cost.
 
-**GraphQL API helpers for test data.** `helpers/api/` wraps GraphQL mutations (`createPerson` / `deletePerson`) authenticated with the JWT pulled from the session cookie. Fixtures call these directly to set up and tear down records, which is faster and more reliable than driving the same operations through the UI.
+**GraphQL API helpers for test data.** `helpers/api/` wraps GraphQL mutations (`createPerson` / `deletePerson`) authenticated with the JWT pulled from the session cookie. Fixtures call these directly to set up and tear down records — faster and more reliable than driving the same operations through the UI.
 
-**Session reuse via storageState.** `setup/global-setup.ts` logs in once before the suite runs and saves the session to `storage/auth.json`. Tests opt in with `test.use({ storageState: 'storage/auth.json' })`, so most tests start already authenticated instead of repeating a UI login.
+**Session reuse via storageState.** `setup/global-setup.ts` logs in once before the suite runs and saves the session to `storage/auth.json`. Tests opt in with `test.use({ storageState: 'storage/auth.json' })`, so most tests start already authenticated instead of repeating a UI login. Auth tests deliberately skip this — they need a fresh, unauthenticated context to test the login flow itself.
 
 **Typed test data.** All test data lives in `test-data/` as typed interfaces with named constants (e.g. `validUser` in `auth.data.ts`). Renaming or removing a field surfaces as a compile error everywhere it's used, not a silent runtime failure.
 
 **Tagging strategy.** Every test carries `{ tag: '@smoke' }` or `{ tag: '@regression' }`. This lets CI get fast feedback on every push without skipping thorough coverage — it just runs on a different cadence.
+
+**FlakyReporter.** `reporters/flaky.reporter.ts` is a custom Playwright reporter that detects flaky tests — tests that fail at least once but eventually pass within the same run (i.e. passed only after a retry). Results are persisted to `flaky-report/flaky.json` between runs so that flakiness history accumulates over time. Run `npm run dashboard` to generate an HTML dashboard with severity classification, filtering, and sortable columns.
 
 ## Project structure
 
@@ -52,6 +55,8 @@ twenty-crm-tests/
   pages/          # Page Objects, one per bounded screen (auth/, people/)
   fixtures/       # custom Playwright fixtures extending base test (index.ts)
   helpers/api/    # GraphQL client + per-entity API helpers for test data setup/teardown
+  reporters/       # FlakyReporter + dashboard generator
+  flaky-report/    # persisted flaky.json + generated index.html (gitignored)
   config/         # URLs and env config (urls.ts)
   test-data/      # typed interfaces + constants, one file per domain
   setup/          # global-setup.ts — runs once before all tests, saves storage/auth.json
@@ -64,7 +69,7 @@ twenty-crm-tests/
 
 The pipeline is designed around a **smoke gate** — fast, critical-path tests block every push before the slower regression suite runs. This keeps PR feedback under 2 minutes while still running thorough coverage on every merge.
 
-`.github/workflows/e2e.yml` runs two jobs against a Twenty CRM service container (no external environment provisioning needed):
+`.github/workflows/e2e.yml` runs two jobs against a Twenty CRM service container:
 
 | Trigger | Job | Tests | Artifacts retained |
 |---|---|---|---|
@@ -87,6 +92,8 @@ The pipeline is designed around a **smoke gate** — fast, critical-path tests b
 
 - **Reports as artifacts** – HTML reports are uploaded after every run (`if: always()`), so failures are debuggable even when the job itself is gone. Smoke reports expire after 7 days; regression after 14.
 
+> **Local vs CI:** The workflow is designed for a hosted environment where Twenty CRM credentials are stored as GitHub secrets. To run the full suite locally, start Twenty via Docker and configure `.env` as described in Quick start.
+
 ## Test coverage
 
 | Area | Scenario | Tag |
@@ -94,4 +101,6 @@ The pipeline is designed around a **smoke gate** — fast, critical-path tests b
 | Auth | Log in with valid credentials | `@smoke` |
 | Auth | Invalid password shows an error | `@regression` |
 | Auth | Sign-up attempt with a non-existent email is blocked | `@regression` |
-| People | A person created via the API appears in the list | `@smoke` |
+| People | Person created via API appears in the list | `@smoke` |
+| People | Person detail page loads with fields container | `@smoke` |
+| People | Person first name can be edited inline | `@regression` |
