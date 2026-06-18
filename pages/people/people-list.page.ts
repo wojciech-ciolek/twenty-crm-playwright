@@ -11,7 +11,7 @@ export class PeopleListPage {
   }
 
   async goto(): Promise<void> {
-    await this.page.goto(urls.contacts);
+    await this.page.goto(urls.people);
   }
 
   getRowByRecordId(recordId: string): Locator {

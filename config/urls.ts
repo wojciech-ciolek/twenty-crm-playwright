@@ -6,7 +6,7 @@ export const config = {
 export const urls = {
   home: '/',
   login: '/welcome',
-  contacts: '/objects/people',
+  people: '/objects/people',
   companies: '/objects/companies',
   pipeline: '/objects/opportunities',
 } as const;
