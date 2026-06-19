@@ -100,6 +100,18 @@ The pipeline is designed around a **smoke gate** — fast, critical-path tests b
 
 > **Local vs CI:** The workflow is designed for a hosted environment where Twenty CRM credentials are stored as GitHub secrets. To run the full suite locally, start Twenty via Docker and configure `.env` as described in Quick start.
 
+## FlakyReporter demo
+
+To see the FlakyReporter and dashboard in action, run the intentionally flaky demo test:
+
+```bash
+npm run test:flaky-demo
+npm run dashboard
+open flaky-report/index.html
+```
+
+This test (`tests/people/people-flaky-demo.spec.ts`) uses a deliberately short timeout to produce intermittent failures, demonstrating how the reporter detects and tracks flakiness over multiple runs.
+
 ## Test coverage
 
 | Area | Scenario | Tag |
