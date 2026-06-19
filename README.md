@@ -112,6 +112,8 @@ open flaky-report/index.html
 
 This test (`tests/people/people-flaky-demo.spec.ts`) uses a deliberately short timeout to produce intermittent failures, demonstrating how the reporter detects and tracks flakiness over multiple runs.
 
+![Flaky Test Dashboard](docs/images/flaky-dashboard.png)
+
 ## Test coverage
 
 | Area | Scenario | Tag |
