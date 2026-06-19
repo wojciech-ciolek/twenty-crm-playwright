@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "E2E test portfolio for Twenty CRM – demonstrating senior QA automation patterns",
   "scripts": {
-    "test": "playwright test",
+    "test": "playwright test --grep-invert @flaky-demo",
     "test:smoke": "playwright test --grep @smoke",
     "test:regression": "playwright test --grep @regression",
     "test:auth": "playwright test tests/auth/",
@@ -24,6 +24,7 @@
     "test:flaky-demo": "playwright test --grep @flaky-demo --repeat-each=10 --retries=2 --config playwright.config.ci.ts"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.44.0",
     "@types/node": "^20.0.0",

@@ -51,6 +51,8 @@ npm run allure:open     # open the generated Allure report
 
 **Tagging strategy.** Every test carries `{ tag: '@smoke' }` or `{ tag: '@regression' }`. This lets CI get fast feedback on every push without skipping thorough coverage — it just runs on a different cadence.
 
+**Visual regression via clipping, not full-page screenshots.** `tests/people/people-list-visual.spec.ts` asserts `expect(page).toHaveScreenshot()` to catch layout/CSS regressions functional tests miss, but clips the comparison to the static region above the data table instead of the full page. The table body is shared, parallel-mutated data with relative "x days ago" dates, so neither its content nor its row count is deterministic — masking the rows turned out not to be enough, since a changed row count still shifts the footer to a different position than the baseline. Clipping the variable area out of the captured image entirely, rather than skipping visual testing for this page, keeps the assertion meaningful without the flakiness.
+
 **FlakyReporter.** `reporters/flaky.reporter.ts` is a custom Playwright reporter that detects flaky tests — tests that fail at least once but eventually pass within the same run (i.e. passed only after a retry). Results are persisted to `flaky-report/flaky.json` between runs so that flakiness history accumulates over time. Run `npm run dashboard` to generate an HTML dashboard with severity classification, filtering, and sortable columns.
 
 **Allure reporting.** `allure-playwright` is registered alongside the built-in `html` and `list` reporters in both `playwright.config.ts` and `playwright.config.ci.ts`, writing raw results to `allure-results/`. Run `npm run allure:generate` to build the static HTML report into `allure-report/`, then `npm run allure:open` to serve and view it (or `npm run allure:clean` to clear both directories between runs).
@@ -128,3 +130,5 @@ This test (`tests/people/people-flaky-demo.spec.ts`) uses a deliberately short t
 | People | Person created via API appears in the list | `@smoke` |
 | People | Person detail page loads with fields container | `@smoke` |
 | People | Person first name can be edited inline | `@regression` |
+| People | People list matches the visual baseline (static region above the data table) | `@regression` |
+| People | People list has no new WCAG 2.1 AA accessibility violations | `@regression` |
