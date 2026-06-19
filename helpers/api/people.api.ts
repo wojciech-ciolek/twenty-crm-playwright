@@ -26,6 +26,15 @@ const DELETE_PERSON = `
   }
 `;
 
+const LINK_PERSON_TO_COMPANY = `
+  mutation LinkPersonToCompany($id: String!, $input: PersonUpdateInput!) {
+    updatePerson(id: $id, data: $input) {
+      id
+      companyId
+    }
+  }
+`;
+
 /**
  * Creates a person via GraphQL API.
  * Returns the created person's ID for use in test cleanup.
@@ -49,4 +58,14 @@ export async function createPerson(page: Page, input: PersonInput): Promise<stri
  */
 export async function deletePerson(page: Page, id: string): Promise<void> {
     await graphqlRequest(page, 'DeletePerson', DELETE_PERSON, { id });
+}
+
+/**
+ * Links a person to a company via GraphQL API.
+ */
+export async function linkPersonToCompany(page: Page, personId: string, companyId: string): Promise<void> {
+    await graphqlRequest(page, 'LinkPersonToCompany', LINK_PERSON_TO_COMPANY, {
+        id: personId,
+        input: { companyId },
+    });
 }

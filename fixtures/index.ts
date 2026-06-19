@@ -1,11 +1,14 @@
 import { test as base } from '@playwright/test';
 import { LoginPage } from '@pages/auth';
 import { createPerson, deletePerson } from '@helpers/api/people.api';
+import { createCompany, deleteCompany } from '@helpers/api/companies.api';
 import { testPerson } from '@test-data/people.data';
+import { testCompany } from '@test-data/companies.data';
 
 interface TwentyFixtures {
   loginPage: LoginPage;
   personId: string;
+  companyId: string;
 }
 
 export const test = base.extend<TwentyFixtures>({
@@ -23,6 +26,16 @@ export const test = base.extend<TwentyFixtures>({
 
     await deletePerson(page, id);
     console.log(`[fixture] Deleted person: ${id}`);
+  },
+
+  companyId: async ({ page }, use) => {
+    const id = await createCompany(page, testCompany);
+    console.log(`[fixture] Created company: ${id}`);
+
+    await use(id);
+
+    await deleteCompany(page, id);
+    console.log(`[fixture] Deleted company: ${id}`);
   },
 });
 

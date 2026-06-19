@@ -8,6 +8,7 @@
     "test:regression": "playwright test --grep @regression",
     "test:auth": "playwright test tests/auth/",
     "test:people": "playwright test tests/people/",
+    "test:companies": "playwright test tests/companies/",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "codegen": "playwright codegen http://localhost:3000",

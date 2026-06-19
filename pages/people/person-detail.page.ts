@@ -44,4 +44,12 @@ export class PersonDetailPage {
     await this.openSidePanel();
     await this.deletePersonMenuItem.click();
   }
+
+  // The linked company is rendered as a named "chip" element both inside the
+  // fields widget and in a separate relation panel below it. There is no
+  // stable testid per relation, so we scope to the fields widget – the
+  // canonical single-value display – and match by the company's name.
+  getRelatedCompanyChip(companyName: string): Locator {
+    return this.fieldsContainer.getByTestId('chip').filter({ hasText: companyName });
+  }
 }
