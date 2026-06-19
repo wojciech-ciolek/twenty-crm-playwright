@@ -1,5 +1,9 @@
 # Twenty CRM – E2E Test Portfolio
 
+![E2E Tests](https://github.com/wojciech-ciolek/twenty-crm-playwright/actions/workflows/e2e.yml/badge.svg)
+
+> **Note:** This workflow is designed for a hosted environment with Twenty CRM credentials stored as GitHub secrets — see [CI/CD](#cicd) for the full pipeline design. To run tests, follow Quick start below.
+
 Playwright + TypeScript end-to-end test suite for [Twenty CRM](https://github.com/twentyhq/twenty), built to demonstrate production-grade QA automation: Page Objects, GraphQL-based test data management, a custom flaky test tracker, and a staged CI pipeline.
 
 ## Why Twenty CRM

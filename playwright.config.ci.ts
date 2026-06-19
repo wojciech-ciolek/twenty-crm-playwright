@@ -17,6 +17,14 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
   },
+  // See playwright.config.ts for rationale – tolerate harmless drift from
+  // seed-data dates/avatars without masking real visual regressions.
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixels: 200,
+      threshold: 0.3,
+    },
+  },
   projects: [
     {
       name: 'chromium',

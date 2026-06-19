@@ -19,6 +19,17 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
   },
+  // Real records (seed data + relative "x days ago" dates, avatar colors) drift
+  // a little between runs without any actual regression. threshold loosens the
+  // per-pixel color sensitivity and maxDiffPixels caps the total differing area,
+  // so a couple of date-string glyphs changing doesn't fail the test while a
+  // genuine layout/style regression (thousands of differing pixels) still does.
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixels: 200,
+      threshold: 0.3,
+    },
+  },
   projects: [
     {
       name: 'chromium',
